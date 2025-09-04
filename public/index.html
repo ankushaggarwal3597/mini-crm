@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Mini CRM</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 30px;
+    }
+    h2 {
+      color: #333;
+    }
+    input, button {
+      padding: 8px;
+      margin: 5px;
+    }
+    table {
+      border-collapse: collapse;
+      width: 80%;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+    }
+    th {
+      background: #f4f4f4;
+    }
+    .btn-delete {
+      background: red;
+      color: white;
+      border: none;
+      cursor: pointer;
+      padding: 5px 10px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Mini CRM - Manage Leads</h2>
+
+  <div>
+    <input type="text" id="name" placeholder="Name">
+    <input type="email" id="email" placeholder="Email">
+    <input type="text" id="phone" placeholder="Phone">
+    <button onclick="addLead()">Add Lead</button>
+  </div>
+
+  <h3>All Leads</h3>
+  <table id="leadsTable">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Phone</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const API_URL = "http://localhost:5000/leads";
+
+    async function fetchLeads() {
+      const res = await fetch(API_URL);
+      const data = await res.json();
+      const tbody = document.querySelector("#leadsTable tbody");
+      tbody.innerHTML = "";
+      data.forEach(lead => {
+        const row = `
+          <tr>
+            <td>${lead.id}</td>
+            <td>${lead.name}</td>
+            <td>${lead.email}</td>
+            <td>${lead.phone}</td>
+            <td>
+              <select onchange="updateLead(${lead.id}, this.value)">
+                <option ${lead.status==="New" ? "selected" : ""}>New</option>
+                <option ${lead.status==="Contacted" ? "selected" : ""}>Contacted</option>
+                <option ${lead.status==="Converted" ? "selected" : ""}>Converted</option>
+              </select>
+            </td>
+            <td>
+              <button class="btn-delete" onclick="deleteLead(${lead.id})">Delete</button>
+            </td>
+          </tr>
+        `;
+        tbody.innerHTML += row;
+      });
+    }
+
+    async function addLead() {
+      const name = document.getElementById("name").value;
+      const email = document.getElementById("email").value;
+      const phone = document.getElementById("phone").value;
+      await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, phone, status: "New" })
+      });
+      fetchLeads();
+    }
+
+    async function updateLead(id, status) {
+      await fetch(`${API_URL}/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status })
+      });
+      fetchLeads();
+    }
+
+    async function deleteLead(id) {
+      await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+      fetchLeads();
+    }
+
+    // Load leads on page load
+    fetchLeads();
+  </script>
+</body>
+</html>
